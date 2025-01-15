@@ -1,46 +1,47 @@
-import { vs as cloudinary } from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
-import { v2 as cloudinary } from "cloudinary";
+// Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-(async function (localFilePath) {
-  // Configuration
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-
+const uploadOnCloudinary = async (localFilePath) => {
   // Upload an image
-  const uploadResult = await cloudinary.uploader
-    .upload(localFilePath, {
-      public_id: "shoes",
-    })
-    .catch((error) => {
-      fs.unlinkSync(localFilePath); // remove the locally saved temporary file
-      //   as the ulpoad operation got failed
-      console.log(error);
-      //   return null;
+  try {
+    if (!localFilePath) return null;
+    const uploadResult = await cloudinary.uploader.upload(localFilePath, {
+      resource_type: "auto",
     });
-
-  console.log(uploadResult);
+    console.log(uploadResult);
+    return uploadResult;
+  } catch (error) {
+    fs.unlinkSync(localFilePath); // remove the locally saved temporary file
+    //   as the ulpoad operation got failed
+    console.log(error);
+    //   return null;
+  }
 
   // Optimize delivery by resizing and applying auto-format and auto-quality
-  const optimizeUrl = cloudinary.url("shoes", {
-    resource_type: "auto",
-    fetch_format: "auto",
-    quality: "auto",
-  });
+  // const optimizeUrl = cloudinary.url("shoes", {
+  //   resource_type: "auto",
+  //   fetch_format: "auto",
+  //   quality: "auto",
+  // });
 
-  console.log(optimizeUrl);
+  // console.log(optimizeUrl);
 
   // Transform the image: auto-crop to square aspect_ratio
-  const autoCropUrl = cloudinary.url("shoes", {
-    crop: "auto",
-    gravity: "auto",
-    width: 500,
-    height: 500,
-  });
+  // const autoCropUrl = cloudinary.url("shoes", {
+  //   crop: "auto",
+  //   gravity: "auto",
+  //   width: 500,
+  //   height: 500,
+  // });
 
-  console.log(autoCropUrl);
-})();
+  // console.log(autoCropUrl);
+};
+
+export { uploadOnCloudinary };
