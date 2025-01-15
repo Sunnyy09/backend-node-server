@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import connectDB from "./db/index.js";
 import { app } from "./app.js";
 
-// upload database connectivity and working on utils and models.
+// add configuration of file upload and working on controllers
 // as early as possible in your application, import and configure dotenv!
 
 dotenv.config({
