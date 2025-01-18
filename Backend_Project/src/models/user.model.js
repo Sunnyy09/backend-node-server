@@ -29,9 +29,10 @@ const userSchema = new Schema(
       public_id: { type: String, required: true },
       secure_url: { type: String, required: true },
     },
-    // coverImage: {
-    //   type: String,
-    // },
+    coverImage: {
+      public_id: { type: String, required: true },
+      secure_url: { type: String, required: true },
+    },
     watchHistory: [
       {
         type: Schema.Types.ObjectId,
