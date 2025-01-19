@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs, { fstat } from "fs";
+import { apiError } from "./apiError.js";
 
 // Configuration
 cloudinary.config({
@@ -19,7 +20,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     if (fs.existsSync(localFilePath)) {
       fs.unlinkSync(localFilePath);
     }
-    // console.log(uploadResult);
+    console.log(uploadResult);
     return uploadResult;
   } catch (error) {
     fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the ulpoad operation got failed
@@ -28,4 +29,25 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (url) => {
+  try {
+    if (!url) {
+      throw new apiError(501, "No URL  provided for deletion");
+    }
+
+    const publicId = url.split("/").slice(-2).join("/").split(".")[0];
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    if (result.result === "ok") {
+      console.log(`Deleted file: ${publicId}`);
+      return true;
+    } else {
+      console.error(`Failed to delete file: ${publicId}`);
+      return false;
+    }
+  } catch (error) {
+    console.log("Error in deleteFromCloudinary", error.message);
+  }
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary };

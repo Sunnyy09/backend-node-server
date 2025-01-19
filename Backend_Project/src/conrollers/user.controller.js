@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { apiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import fs from "fs";
 import Jwt from "jsonwebtoken";
@@ -239,7 +242,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "Current User fetched successfully");
+    .json(new apiResponse(200, req.user, "Current User fetched successfully"));
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -279,21 +282,38 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new apiError(400, "Error while avatar uploading on cloudinary");
   }
 
-  const user = User.findById(
-    req.user?._id,
-    {
-      $set: {
-        avatar: avatar.url,
-      },
-    },
-    {
-      new: true,
+  // const user = User.findByIdAndUpdate(
+  //   req.user?._id,
+  //   {
+  //     $set: {
+  //       avatar: avatar.url,
+  //     },
+  //   },
+  //   {
+  //     new: true,
+  //   }
+  // ).select("-password");
+
+  const user = await User.findById(req.user?._id).select("-password");
+  if (!user) {
+    throw new apiError(404, "User not found");
+  }
+
+  const holdImageToBeDeleted = user.avatar;
+
+  if (holdImageToBeDeleted) {
+    const isDeleted = await deleteFromCloudinary(holdImageToBeDeleted);
+    if (!isDeleted) {
+      console.warn("Failed to delete old avatar, proceeding with update");
     }
-  ).select("-password");
+  }
+
+  user.avatar = avatar.url;
+  await user.save();
 
   return res
     .status(200)
-    .json(new apiResponse(200, "Avatar Image updated successfully"));
+    .json(new apiResponse(200, "Avatar updated successfully"));
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
@@ -308,7 +328,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new apiError(400, "Error while avatar uploading on cloudinary");
   }
 
-  const user = User.findById(
+  const user = User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -319,6 +339,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
       new: true,
     }
   ).select("-password");
+
+  // TODO: delete old image same as avatar
 
   return res
     .status(200)
