@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
+import fs, { fstat } from "fs";
 
 // Configuration
 cloudinary.config({
@@ -16,11 +16,15 @@ const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
       folder: "Backend_Project",
     });
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
+    // console.log(uploadResult);
     return uploadResult;
   } catch (error) {
     fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the ulpoad operation got failed
     console.log(error);
-    //   return null;
+    return null;
   }
 };
 

@@ -26,12 +26,11 @@ const userSchema = new Schema(
       index: true,
     },
     avatar: {
-      public_id: { type: String, required: true },
-      secure_url: { type: String, required: true },
+      type: String,
+      required: true,
     },
     coverImage: {
-      public_id: { type: String, required: true },
-      secure_url: { type: String, required: true },
+      type: String,
     },
     watchHistory: [
       {
@@ -75,7 +74,7 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 userSchema.methods.generateRefreshToken = function () {
-  jwt.sign(
+  return jwt.sign(
     {
       _id: this._id,
     },
