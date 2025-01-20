@@ -149,8 +149,9 @@ const logOutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        // better approach instead of set
+        refreshToken: 1, // this removes the field form document
       },
     },
     {
@@ -232,7 +233,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     throw new apiError(400, "Invalid Password");
   }
 
-  user.password = newPassword;
+  user.password = newpassword;
   await user.save({ validateBeforeSave: false });
 
   return res
@@ -484,7 +485,7 @@ export {
   refreshAccessToken,
   changeCurrentPassword,
   getCurrentUser,
-  updateAccountDetails
+  updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
