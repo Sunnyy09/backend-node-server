@@ -36,7 +36,9 @@ const deleteFromCloudinary = async (url) => {
     }
 
     const publicId = url.split("/").slice(-2).join("/").split(".")[0];
-    const result = await cloudinary.uploader.destroy(publicId);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+    });
 
     if (result.result === "ok") {
       console.log(`Deleted file: ${publicId}`);
@@ -50,4 +52,30 @@ const deleteFromCloudinary = async (url) => {
   }
 };
 
-export { uploadOnCloudinary, deleteFromCloudinary };
+const deleteVideoFromCloudinary = async (url) => {
+  try {
+    if (!url) {
+      throw new apiError(501, "No URL provided for video deletion");
+    }
+
+    const publicId = url.split("/").slice(-2).join("/").split(".")[0];
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "video",
+    });
+
+    if (result.result === "ok") {
+      console.log(`Successfully deleted file: ${publicId}`);
+      return true;
+    } else if (result.result === "not found") {
+      console.log(`File not found in Cloudinary: ${publicId}`);
+      return true; // File is already deleted, treat it as success
+    } else {
+      console.error(`Failed to delete file: ${publicId}`, result);
+      return false;
+    }
+  } catch (error) {
+    console.log("Error in delete video from Cloudinary", error.message);
+  }
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary, deleteVideoFromCloudinary };
