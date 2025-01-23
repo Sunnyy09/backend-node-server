@@ -8,56 +8,78 @@ import {
   deleteVideoFromCloudinary,
 } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
+import mongoose, { isValidObjectId } from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
-  try {
-    const pageNumber = parseInt(page);
-    const pageLimit = parseInt(limit);
-    const skip = (pageNumber - 1) * pageLimit;
-
-    // filter object
-    const filter = {};
-    if (userId) {
-      filter.userId = userId;
-    }
-
-    if (query) {
-      filter.title = { $regex: query, $options: "i" }; // case-insensitive search
-    }
-
-    // sorting options
-    const sortingOptions = {};
-    if (sortBy) {
-      sortingOptions[sortBy] = sortType === "desc" ? -1 : 1;
-    }
-
-    // Query MongoDB with filters, sorting, and pagination
-    const videos = await Video.find(filter)
-      .sort(sortingOptions)
-      .skip(skip)
-      .limit(pageLimit);
-
-    // total count for the filters
-    const totalCount = await Video.countDocuments(filter);
-
-    return res.status(200).json(
-      new apiResponse(
-        200,
-        {
-          total: totalCount,
-          page: pageNumber,
-          limit: pageLimit,
-          results: videos,
-        },
-        "All videos fetched successfully"
-      )
-    );
-  } catch (error) {
-    console.error("Error during getting all videos", error);
-    throw new apiError(500, "Internal Server Error");
+  const filter = {};
+  if (query) {
+    filter.title = { $regex: query, $options: "i" }; // Case-insensitive search by title
   }
+  if (userId) {
+    filter.owner = new mongoose.Types.ObjectId(userId); // Filter by userId if provided
+  }
+
+  const totalVideos = await Video.countDocuments(filter);
+
+  // Fetch videos with aggregation for pagination, sorting, and population
+  const videos = await Video.aggregate([
+    { $match: filter }, // Match videos based on the filter
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    { $unwind: "$owner" }, // Unwind the owner array into a single object
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        description: 1,
+        videoFile: 1,
+        thumbnail: 1,
+        duration: 1,
+        createdAt: 1,
+        views: 1,
+        isPublished: 1,
+        owner: 1,
+      },
+    },
+    {
+      $sort: {
+        [sortBy]: sortType === "asc" ? 1 : -1,
+      },
+    },
+    { $skip: (page - 1) * parseInt(limit) },
+    { $limit: parseInt(limit) },
+  ]);
+
+  if (!videos.length) {
+    throw new apiError(404, "No videos found");
+  }
+
+  // Pagination indicators
+  const hasNextPage = page * limit < totalVideos;
+  const hasPreviousPage = page > 1;
+
+  return res.status(200).json(
+    new apiResponse(
+      200,
+      {
+        totalVideos,
+        currentPage: parseInt(page),
+        limit: parseInt(limit),
+        nextPage: hasNextPage ? parseInt(page) + 1 : null,
+        previousPage: hasPreviousPage ? parseInt(page) - 1 : null,
+        videos,
+      },
+      "Videos fetched successfully"
+    )
+  );
 });
 
 const publishVideo = asyncHandler(async (req, res) => {
@@ -95,6 +117,8 @@ const publishVideo = asyncHandler(async (req, res) => {
       duration: videoFile.duration,
       videoFile: videoFile.url,
       thumbnail: thumbnailFile.url,
+      owner: req.user?._id,
+      isPublished: false,
     });
 
     return res

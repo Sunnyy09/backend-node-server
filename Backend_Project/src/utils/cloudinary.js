@@ -10,22 +10,20 @@ cloudinary.config({
 });
 
 const uploadOnCloudinary = async (localFilePath) => {
-  // Upload an image
+  console.log(localFilePath);
   try {
     if (!localFilePath) return null;
-    const uploadResult = await cloudinary.uploader.upload(localFilePath, {
+
+    const result = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
       folder: "Backend_Project",
     });
-    if (fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
-    }
-    console.log(uploadResult);
-    return uploadResult;
+
+    fs.unlinkSync(localFilePath);
+    return result;
   } catch (error) {
-    fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the ulpoad operation got failed
-    console.log(error);
-    return null;
+    fs.unlinkSync(localFilePath);
+    return error;
   }
 };
 
