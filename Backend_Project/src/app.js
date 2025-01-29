@@ -26,6 +26,7 @@ import tweetRouter from "./routes/tweet.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import viewRouter from "./routes/view.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
+import healthcheckRouter from "./routes/healthcheck.routes.js";
 // routes declaration
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
@@ -36,5 +37,6 @@ app.use("/api/v1/tweet", tweetRouter);
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/view", viewRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/healthcheck", healthcheckRouter);
 
 export { app };
